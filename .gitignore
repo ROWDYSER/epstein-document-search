@@ -1,0 +1,38 @@
+# Large data files
+*.zip
+meilisearch_documents.json
+meilisearch_documents_part*.json
+
+# Document folders (too large for git)
+001/
+002/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log

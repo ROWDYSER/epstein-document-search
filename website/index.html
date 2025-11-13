@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epstein Document Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .search-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        select, button {
+            padding: 10px;
+            font-size: 14px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-title {
+            font-weight: bold;
+            color: #1a73e8;
+            font-size: 18px;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .result-content {
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .result-content.expanded {
+            max-height: none;
+        }
+
+        .expand-btn {
+            margin-top: 10px;
+            padding: 5px 10px;
+            font-size: 12px;
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        mark {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Epstein Document Search</h1>
+
+        <div class="search-box">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search documents..."
+                autocomplete="off"
+            >
+
+            <div class="filters">
+                <select id="folderFilter">
+                    <option value="">All Folders</option>
+                    <option value="001">Folder 001</option>
+                    <option value="002">Folder 002</option>
+                </select>
+
+                <select id="limitFilter">
+                    <option value="25" selected>25 results</option>
+                    <option value="50">50 results</option>
+                    <option value="100">100 results</option>
+                    <option value="250">250 results</option>
+                    <option value="500">500 results</option>
+                    <option value="1000">1000 results</option>
+                </select>
+
+                <button onclick="search()">Search</button>
+            </div>
+        </div>
+
+        <div id="stats" class="stats" style="display:none;"></div>
+        <div id="results" class="results"></div>
+        <div id="loadMoreContainer" style="display:none; text-align:center; margin-top:20px;">
+            <button onclick="loadMore()" style="padding:15px 30px; font-size:16px;">Load More Results</button>
+        </div>
+    </div>
+
+    <script>
+        // Configure these values for your Meilisearch instance
+        const MEILISEARCH_HOST = 'YOUR_MEILISEARCH_HOST'; // e.g., 'https://ms-xxxxx.meilisearch.io'
+        const MEILISEARCH_API_KEY = 'YOUR_SEARCH_API_KEY'; // Use search-only API key, not admin key
+        const INDEX_NAME = 'epstein';
+
+        // Track current search state
+        let currentQuery = '';
+        let currentFolder = '';
+        let currentOffset = 0;
+        let currentLimit = 25;
+        let totalHits = 0;
+
+        // Search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                search();
+            }
+        });
+
+        async function search(append = false) {
+            const query = document.getElementById('searchInput').value.trim();
+            const folder = document.getElementById('folderFilter').value;
+            const limit = document.getElementById('limitFilter').value;
+
+            // If new search, reset offset
+            if (!append) {
+                currentQuery = query;
+                currentFolder = folder;
+                currentLimit = parseInt(limit);
+                currentOffset = 0;
+            }
+
+            if (!query) {
+                document.getElementById('results').innerHTML = '<p class="loading">Enter a search query to get started.</p>';
+                document.getElementById('loadMoreContainer').style.display = 'none';
+                return;
+            }
+
+            if (!append) {
+                document.getElementById('results').innerHTML = '<p class="loading">Searching...</p>';
+                document.getElementById('stats').style.display = 'none';
+                document.getElementById('loadMoreContainer').style.display = 'none';
+            }
+
+            try {
+                const searchParams = {
+                    q: query,
+                    limit: parseInt(limit),
+                    offset: currentOffset,
+                    attributesToHighlight: ['content'],
+                    highlightPreTag: '<mark>',
+                    highlightPostTag: '</mark>',
+                };
+
+                // Add filter if folder selected
+                if (folder) {
+                    searchParams.filter = `folder = ${folder}`;
+                }
+
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+
+                if (MEILISEARCH_API_KEY) {
+                    headers['Authorization'] = `Bearer ${MEILISEARCH_API_KEY}`;
+                }
+
+                const response = await fetch(`${MEILISEARCH_HOST}/indexes/${INDEX_NAME}/search`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(searchParams)
+                });
+
+                const data = await response.json();
+                totalHits = data.estimatedTotalHits || data.hits.length;
+                displayResults(data, append);
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="result-item">
+                        <p style="color: red;">Error: ${error.message}</p>
+                        <p style="margin-top: 10px;">Make sure Meilisearch is running and accessible at ${MEILISEARCH_HOST}</p>
+                    </div>
+                `;
+                document.getElementById('loadMoreContainer').style.display = 'none';
+            }
+        }
+
+        async function loadMore() {
+            currentOffset += currentLimit;
+            await search(true);
+        }
+
+        function displayResults(data, append = false) {
+            const resultsDiv = document.getElementById('results');
+            const statsDiv = document.getElementById('stats');
+
+            if (data.hits.length === 0 && !append) {
+                resultsDiv.innerHTML = '<p class="loading">No results found.</p>';
+                document.getElementById('loadMoreContainer').style.display = 'none';
+                return;
+            }
+
+            // Show stats
+            statsDiv.style.display = 'block';
+            const currentDisplayed = currentOffset + data.hits.length;
+            statsDiv.innerHTML = `Showing ${currentDisplayed} of ${totalHits} results (${data.processingTimeMs}ms)`;
+
+            // Store full content in a map for later access
+            window.fullContentMap = window.fullContentMap || {};
+
+            // Generate HTML for results
+            const resultsHTML = data.hits.map(hit => {
+                const content = hit._formatted?.content || hit.content;
+                const preview = content.substring(0, 500);
+                const needsExpand = content.length > 500;
+
+                // Store full content for this result
+                if (needsExpand) {
+                    window.fullContentMap[hit.id] = content;
+                }
+
+                return `
+                    <div class="result-item">
+                        <div class="result-header">
+                            <div class="result-title">${hit.document_id}</div>
+                            <div class="result-meta">
+                                <span>📁 ${hit.folder}</span>
+                                <span>📄 Page ${hit.page_number}</span>
+                                ${hit.case_number ? `<span>⚖️ ${hit.case_number}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="result-content" id="content-${hit.id}">
+                            ${preview}${needsExpand ? '...' : ''}
+                        </div>
+                        ${needsExpand ? `
+                            <button class="expand-btn" onclick="toggleExpand('${hit.id}')">
+                                Show More
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // Append or replace results
+            if (append) {
+                resultsDiv.innerHTML += resultsHTML;
+            } else {
+                resultsDiv.innerHTML = resultsHTML;
+            }
+
+            // Show/hide Load More button
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
+            if (currentDisplayed < totalHits) {
+                loadMoreContainer.style.display = 'block';
+            } else {
+                loadMoreContainer.style.display = 'none';
+            }
+        }
+
+        function toggleExpand(id) {
+            const contentDiv = document.getElementById(`content-${id}`);
+            const button = event.target;
+            const fullContent = window.fullContentMap[id];
+
+            if (!fullContent) {
+                console.error('Content not found for id:', id);
+                return;
+            }
+
+            if (contentDiv.classList.contains('expanded')) {
+                contentDiv.classList.remove('expanded');
+                contentDiv.innerHTML = fullContent.substring(0, 500) + '...';
+                button.textContent = 'Show More';
+            } else {
+                contentDiv.classList.add('expanded');
+                contentDiv.innerHTML = fullContent;
+                button.textContent = 'Show Less';
+            }
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Load initial message
+        document.getElementById('results').innerHTML = '<p class="loading">Enter a search query to get started.</p>';
+    </script>
+</body>
+</html>
